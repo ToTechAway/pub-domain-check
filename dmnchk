@@ -75,7 +75,7 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   fi
 done
 scriptPath="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-while getopts ":seitalh" opt; do
+while getopts ":secitalh" opt; do
   case $opt in
   h)
     usage
@@ -130,9 +130,9 @@ DOMAIN_NAME_SIZE=${#DOMAIN_NAME}
 function update_tlds() {
   echo "list is updating, this may take a while" >&2
   wget -qP ${scriptPath}/ https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-  tail -n +2 ${scriptPath}/tlds-alpha-by-domain.txt >${scriptPath}/extendedalpha
-  grep -v "XN--" ${scriptPath}/extendedalpha >${scriptPath}/tlds-alpha-by-domain.txt
-  mv ${scriptPath}/tlds-alpha-by-domain.txt ${scriptPath}/extendedalpha
+  tail -n +2 ${scriptPath}/tlds-alpha-by-domain.txt >${scriptPath}/domains-ext-full
+  grep -v "XN--" ${scriptPath}/domains-ext-full >${scriptPath}/tlds-alpha-by-domain.txt
+  mv ${scriptPath}/tlds-alpha-by-domain.txt ${scriptPath}/domains-ext-full
 }
 
 function who_is() {
@@ -231,51 +231,11 @@ if [ "$SMALL" = true ]; then
     'org'
   )
 else
-  DOMAINS=(
-    'agency'
-    'ai'
-    'app'
-    'art'
-    'biz'
-    'blog'
-    'cloud'
-    'com'
-    'company'
-    'dev'
-    'digital'
-    'eu'
-    'expert'
-    'fr'
-    'global'
-    'group'
-    'in'
-    'inc'
-    'info'
-    'io'
-    'it'
-    'live'
-    'mc'
-    'me'
-    'net'
-    'network'
-    'online'
-    'one'
-    'org'
-    # 'shop' ## always a network connection errror when performing a whois on .shop
-    'site'
-    'space'
-    'store'
-    'stream'
-    'systems'
-    'tech'
-    'uk'
-    'us'
-    'website'
-    'world'
-    'xyz'
-    'trade'
-    'cc'
-  )
+  DOMAINS=()
+  while read line; do
+    THISDOMAIN=$(echo $line | tr '[:upper:]' '[:lower:]')
+    DOMAINS+=($THISDOMAIN)
+  done <${scriptPath}/domains-ext-std
 fi
 
 IFS=$'\n' DOMAINS=($(sort <<<"${DOMAINS[*]}" | tr '[:upper:]' '[:lower:]'))
@@ -291,7 +251,7 @@ if [ "$EXTENDED" = true ]; then
   while read line; do
     THISDOMAIN=$(echo $line | tr '[:upper:]' '[:lower:]')
     DOMAINS+=($THISDOMAIN)
-  done <${scriptPath}/extendedalpha
+  done <${scriptPath}/domains-ext-full
 fi
 
 if [ "$LIST" = true ]; then
